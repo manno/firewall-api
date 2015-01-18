@@ -10,3 +10,8 @@ type User struct {
 }
 
 type Users []User
+
+type Status struct {
+  State  string  `json:"status"`
+}
+
