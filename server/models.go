@@ -17,3 +17,9 @@ const OkStatus string = "ok"
 type Status struct {
 	State string `json:"status"`
 }
+
+func (user *User) updateUserIp(ip string) {
+  user.OldIp = user.Ip
+  user.Ip = ip
+  user.UpdatedAt = time.Now()
+}
