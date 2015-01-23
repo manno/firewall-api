@@ -11,6 +11,8 @@ const BindAddr string = ":8080"
 // check against api keys
 // write ip to database (api, ip, old ip)
 func main() {
+	userdb.Open()
+	defer userdb.Close()
 
 	if !userdb.Exists() {
 		userdb.Create()

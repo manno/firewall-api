@@ -2,15 +2,14 @@ package userdb
 
 import (
 	"database/sql"
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/lib/pq"
 	"libs/models"
 	"os"
+	"fmt"
 	"time"
 	"errors"
 	"log"
 )
-
-const RepoFilename string = "repo.db"
 
 type UserRow struct {
 	Id        int
@@ -22,24 +21,29 @@ type UserRow struct {
 
 const createStmt string = `
   create table users (
-    id integer not null primary key,
+    id serial primary key,
     api_key text not null unique,
     ip text,
     old_ip text,
-    updated_at datetime not null
+    updated_at timestamp not null
   );
 `
-const seedStmt = "INSERT INTO users (api_key, updated_at) VALUES ('123', date('now'));"
-const findByApiKeyStmt = "SELECT api_key, ip, old_ip, updated_at FROM users WHERE api_key = ?"
-const updateUserStmt = "UPDATE users SET ip=?, old_ip=?, updated_at=? WHERE api_key = ?"
-const changedUsers = "SELECT api_key, ip, old_ip, updated_at FROM users WHERE updated_at > ?"
+const seedStmt = "INSERT INTO users (api_key) VALUES ('123'));"
+const findByApiKeyStmt = "SELECT api_key, ip, old_ip, updated_at FROM users WHERE api_key = $1"
+const updateUserStmt = "UPDATE users SET ip=$1, old_ip=$2, updated_at=$3 WHERE api_key = $4"
+const changedUsers = "SELECT api_key, ip, old_ip, updated_at FROM users WHERE updated_at > $1"
+
+var db *sql.DB
+
+func Open() {
+	db = connectDatabase()
+}
+
+func Close() {
+	db.Close()
+}
 
 func FindUser(api_key string) (user models.User, err error) {
-	db, err := connectDatabase()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	rows, err := db.Query(findByApiKeyStmt, api_key)
 	if err != nil {
 		log.Fatal(err)
@@ -59,11 +63,6 @@ func FindUser(api_key string) (user models.User, err error) {
 }
 
 func ChangedUsers(since time.Time) (users models.Users, err error) {
-	db, err := connectDatabase()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	rows, err := db.Query(changedUsers, since)
 	if err != nil {
 		log.Printf("%s params: (since: %s)", err, since)
@@ -83,11 +82,6 @@ func ChangedUsers(since time.Time) (users models.Users, err error) {
 }
 
 func UpdateUser(user models.User) {
-	db, err := connectDatabase()
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	stmt, err := db.Prepare(updateUserStmt)
 	if err != nil {
 		log.Fatal(err)
@@ -100,41 +94,51 @@ func UpdateUser(user models.User) {
 }
 
 func Create() {
-	db, err := connectDatabase()
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	if _, err = db.Exec(createStmt); err != nil {
+	if _, err := db.Exec(createStmt); err != nil {
 		log.Printf("%q: %s\n", err, createStmt)
 	}
-	if _, err = db.Exec(seedStmt); err != nil {
+	if _, err := db.Exec(seedStmt); err != nil {
 		log.Printf("%q: %s\n", err, createStmt)
 	}
-}
-
-func Drop() {
-	os.Remove(RepoFilename)
 }
 
 func Exists() bool {
-	if _, err := os.Stat(RepoFilename); os.IsNotExist(err) {
+	existsStmt := ` 
+	SELECT EXISTS (
+		SELECT 1 
+		FROM   pg_catalog.pg_class c
+		JOIN   pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+		WHERE  n.nspname = 'public'
+		AND    c.relname = 'users'
+		AND    c.relkind = 'r'
+	);
+	`
+	var found bool
+	err := db.QueryRow(existsStmt).Scan(&found)
+	if err != nil {
+		log.Fatal(err)
 		return false
 	}
-	return true
+	return found
 }
 
 func convertSqlString(nullStr sql.NullString) string {
-	value, err := nullStr.Value()
-	if err == nil {
-		return value.(string)
+	if nullStr.Valid {
+		return nullStr.String
 	}
 	return ""
 }
 
-func connectDatabase() (*sql.DB, error) {
-	return sql.Open("sqlite3", RepoFilename)
+func connectDatabase() (*sql.DB) {
+	connectionString := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
+		os.Getenv("FWDB_USER"),
+		os.Getenv("FWDB_PASSWORD"),
+		os.Getenv("FWDB_DB"))
+	db, err := sql.Open("postgres", connectionString)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return db
 }
 
 func scanUserRow(rows *sql.Rows) (user models.User, err error) {
