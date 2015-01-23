@@ -21,9 +21,9 @@ var routes = Routes{
 		Index,
 	},
 	Route{
-		"Ping",
+		"Update",
 		"POST",
-		"/ping",
-		Ping,
+		"/update",
+		Update,
 	},
 }

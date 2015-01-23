@@ -1,9 +1,9 @@
 package main
 
 import (
+	"libs/userdb"
 	"log"
 	"net/http"
-  "libs/userdb" 
 )
 
 const BindAddr string = ":8080"
@@ -12,8 +12,10 @@ const BindAddr string = ":8080"
 // write ip to database (api, ip, old ip)
 func main() {
 
-
-  userdb.Create();
+	if !userdb.Exists() {
+		userdb.Create()
+		log.Printf("Database created")
+	}
 
 	router := NewRouter()
 	log.Printf("Listening on %s", BindAddr)

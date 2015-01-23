@@ -1,11 +1,11 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/gorilla/mux"
+	"net/http"
 )
 
+// FIXME no logging if no match
 func NewRouter() *mux.Router {
 
 	router := mux.NewRouter().StrictSlash(true)
