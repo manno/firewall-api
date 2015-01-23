@@ -1,3 +1,4 @@
-src
+src/github.com
 bin
 pkg
+repo.db

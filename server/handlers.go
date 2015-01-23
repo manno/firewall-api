@@ -5,10 +5,11 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+  "libs/models"
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
-	ok := Status{State: OkStatus}
+	ok := models.Status{State: models.OkStatus}
 	writeJsonHeader(w, http.StatusOK)
 	jsonEncode(w, ok)
 }
@@ -35,7 +36,7 @@ func Ping(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var user User
+	var user models.User
 	writeJsonHeader(w, http.StatusOK)
 	jsonEncode(w, user)
 }

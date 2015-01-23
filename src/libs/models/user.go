@@ -1,4 +1,4 @@
-package main
+package models
 
 import "time"
 
@@ -11,12 +11,6 @@ type User struct {
 }
 
 type Users []User
-
-const OkStatus string = "ok"
-
-type Status struct {
-	State string `json:"status"`
-}
 
 func (user *User) updateUserIp(ip string) {
   user.OldIp = user.Ip

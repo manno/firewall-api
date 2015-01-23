@@ -1,10 +1,11 @@
-package main
+package userdb
 
 import (
   "database/sql"
   _ "github.com/mattn/go-sqlite3"
   "os"
   "log"
+  "libs/models"
 )
 
 const Repo string = "repo.db"
@@ -23,7 +24,7 @@ const createStmt string = `
   );
 `
 
-func FindUser(api_key string) User {
+func FindUser(api_key string) models.User {
   db, err := connectDatabase()
   if err != nil {
     log.Fatal(err)
@@ -33,15 +34,14 @@ func FindUser(api_key string) User {
     log.Fatal(err)
   }
   defer stmt.Close()
-  var user User
-  err = stmt.QueryRow(api_key).Scan(&user.Id, &user.ApiKey, &user.Ip, &user.OldIp, &user.UpdatedAt)
-  if err != nil {
+  var user models.User
+  if err = stmt.QueryRow(api_key).Scan(&user.Id, &user.ApiKey, &user.Ip, &user.OldIp, &user.UpdatedAt); err != nil {
     log.Fatal(err)
   }
   return user
 }
 
-func UpdateUser(user User) {
+func UpdateUser(user models.User) {
   db, err := connectDatabase()
   if err != nil {
     log.Fatal(err)
@@ -51,26 +51,25 @@ func UpdateUser(user User) {
     log.Fatal(err)
   }
   defer stmt.Close()
-  _, err = stmt.Exec(user.Ip, user.OldIp, user.UpdatedAt, user.ApiKey)
-  if err != nil {
+
+  if _, err := stmt.Exec(user.Ip, user.OldIp, user.UpdatedAt, user.ApiKey); err !=nil {
     log.Fatal(err)
   }
 }
 
-func RepoCreate() {
+func Create() {
   db, err := connectDatabase()
   if err != nil {
     log.Fatal(err)
   }
   defer db.Close()
 
-  _, err = db.Exec(createStmt)
-  if err !=nil {
+  if _, err = db.Exec(createStmt); err !=nil {
     log.Printf("%q: %s\n", err, createStmt)
   }
 }
 
-func RepoDrop() {
+func Drop() {
   os.Remove(Repo)
 }
 
