@@ -23,4 +23,3 @@ func main() {
 	log.Printf("Listening on %s", BindAddr)
 	log.Fatal(http.ListenAndServe(BindAddr, router))
 }
-
