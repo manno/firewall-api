@@ -22,5 +22,3 @@ func main() {
 	log.Fatal(http.ListenAndServe(BindAddr, router))
 }
 
-// root iterate apis
-// set up iptables, remove old ip, set nil in db

@@ -6,6 +6,7 @@ import (
 	"libs/models"
 	"os"
 	"time"
+	"errors"
 	"log"
 )
 
@@ -29,33 +30,56 @@ const createStmt string = `
   );
 `
 const seedStmt = "INSERT INTO users (api_key, updated_at) VALUES ('123', date('now'));"
-const findByApiKeyStmt = "SELECT id, api_key, ip, old_ip, updated_at FROM users WHERE api_key = ?"
+const findByApiKeyStmt = "SELECT api_key, ip, old_ip, updated_at FROM users WHERE api_key = ?"
 const updateUserStmt = "UPDATE users SET ip=?, old_ip=?, updated_at=? WHERE api_key = ?"
+const changedUsers = "SELECT api_key, ip, old_ip, updated_at FROM users WHERE updated_at > ?"
 
 func FindUser(api_key string) (user models.User, err error) {
 	db, err := connectDatabase()
 	if err != nil {
 		log.Fatal(err)
-		return user, err
 	}
-	stmt, err := db.Prepare(findByApiKeyStmt)
+
+	rows, err := db.Query(findByApiKeyStmt, api_key)
 	if err != nil {
 		log.Fatal(err)
-		return user, err
 	}
-	defer stmt.Close()
+	defer rows.Close()
 
-	var u UserRow
-	if err = stmt.QueryRow(api_key).Scan(&u.Id, &u.ApiKey, &u.Ip, &u.OldIp, &u.UpdatedAt); err != nil {
-		log.Printf("%s params: (api_key: %s)", err, api_key)
-		return user, err
+	if ! rows.Next() {
+		log.Printf("not found, params: (api_key: %s)", api_key)
+		return user, errors.New("record not found")
+	}
+	user, err = scanUserRow(rows)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	user.ApiKey = u.ApiKey
-	user.Ip = convertSqlString(u.Ip)
-	user.OldIp = convertSqlString(u.OldIp)
-	user.UpdatedAt = u.UpdatedAt
 	return user, nil
+}
+
+func ChangedUsers(since time.Time) (users models.Users, err error) {
+	db, err := connectDatabase()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	rows, err := db.Query(changedUsers, since)
+	if err != nil {
+		log.Printf("%s params: (since: %s)", err, since)
+		return users, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		user, err := scanUserRow(rows)
+		if err != nil {
+			log.Fatal("Failed to scan")
+		}
+		users = append(users, user)
+	}
+
+	return users, err
 }
 
 func UpdateUser(user models.User) {
@@ -111,4 +135,17 @@ func convertSqlString(nullStr sql.NullString) string {
 
 func connectDatabase() (*sql.DB, error) {
 	return sql.Open("sqlite3", RepoFilename)
+}
+
+func scanUserRow(rows *sql.Rows) (user models.User, err error) {
+	var u UserRow
+	if err := rows.Scan(&u.ApiKey, &u.Ip, &u.OldIp, &u.UpdatedAt); err != nil {
+		return user, err
+	}
+
+	user.ApiKey = u.ApiKey
+	user.Ip = convertSqlString(u.Ip)
+	user.OldIp = convertSqlString(u.OldIp)
+	user.UpdatedAt = u.UpdatedAt
+	return user, err
 }
