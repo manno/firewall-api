@@ -25,13 +25,15 @@ const createStmt string = `
     api_key text not null unique,
     ip text,
     old_ip text,
-    updated_at timestamp not null
+    updated_at timestamp not null,
+    last_checked_at timestamp not null
   );
 `
-const seedStmt = "INSERT INTO users (api_key) VALUES ('123'));"
+const seedStmt = "INSERT INTO users (api_key,updated_at,last_checked_at) VALUES ('123',NOW(),NOW());"
 const findByApiKeyStmt = "SELECT api_key, ip, old_ip, updated_at FROM users WHERE api_key = $1"
 const updateUserStmt = "UPDATE users SET ip=$1, old_ip=$2, updated_at=$3 WHERE api_key = $4"
-const changedUsers = "SELECT api_key, ip, old_ip, updated_at FROM users WHERE updated_at > $1"
+const changedUsers = "SELECT api_key, ip, old_ip, updated_at FROM users WHERE updated_at > last_checked_at"
+const updateUserLastCheckedStmt = "UPDATE users SET last_checked_at=NOW() WHERE api_key = $1"
 
 var db *sql.DB
 
@@ -62,10 +64,10 @@ func FindUser(api_key string) (user models.User, err error) {
 	return user, nil
 }
 
-func ChangedUsers(since time.Time) (users models.Users, err error) {
-	rows, err := db.Query(changedUsers, since)
+func ChangedUsers() (users models.Users, err error) {
+	rows, err := db.Query(changedUsers)
 	if err != nil {
-		log.Printf("%s params: (since: %s)", err, since)
+		log.Printf("%s)", err)
 		return users, err
 	}
 	defer rows.Close()
@@ -92,6 +94,19 @@ func UpdateUser(user models.User) {
 		log.Fatal(err)
 	}
 }
+
+func UpdateUserLastChecked(user models.User) {
+	stmt, err := db.Prepare(updateUserLastCheckedStmt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(user.ApiKey); err != nil {
+		log.Fatal(err)
+	}
+}
+
 
 func Create() {
 	if _, err := db.Exec(createStmt); err != nil {

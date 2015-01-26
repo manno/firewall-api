@@ -4,9 +4,8 @@ import (
 	"libs/userdb"
 	"log"
 	"net/http"
+  "os"
 )
-
-const BindAddr string = ":8080"
 
 // check against api keys
 // write ip to database (api, ip, old ip)
@@ -20,6 +19,7 @@ func main() {
 	}
 
 	router := NewRouter()
-	log.Printf("Listening on %s", BindAddr)
-	log.Fatal(http.ListenAndServe(BindAddr, router))
+  var port = ":"+os.Getenv("FW_PORT")
+	log.Printf("Listening on %s", port)
+	log.Fatal(http.ListenAndServe(port, router))
 }

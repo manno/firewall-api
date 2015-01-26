@@ -14,5 +14,5 @@ type Users []User
 func (user *User) UpdateIp(ip string) {
 	user.OldIp = user.Ip
 	user.Ip = ip
-	user.UpdatedAt = time.Now().UTC()
+	user.UpdatedAt = time.Now()
 }
