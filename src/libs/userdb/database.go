@@ -2,13 +2,13 @@ package userdb
 
 import (
 	"database/sql"
+	"errors"
+	"fmt"
 	_ "github.com/lib/pq"
 	"libs/models"
-	"os"
-	"fmt"
-	"time"
-	"errors"
 	"log"
+	"os"
+	"time"
 )
 
 type UserRow struct {
@@ -34,6 +34,7 @@ const findByApiKeyStmt = "SELECT api_key, ip, old_ip, updated_at FROM users WHER
 const updateUserStmt = "UPDATE users SET ip=$1, old_ip=$2, updated_at=$3 WHERE api_key = $4"
 const changedUsers = "SELECT api_key, ip, old_ip, updated_at FROM users WHERE updated_at > last_checked_at"
 const updateUserLastCheckedStmt = "UPDATE users SET last_checked_at=NOW() WHERE api_key = $1"
+const allUsers = "SELECT api_key, ip, old_ip, updated_at FROM users"
 
 var db *sql.DB
 
@@ -52,7 +53,7 @@ func FindUser(api_key string) (user models.User, err error) {
 	}
 	defer rows.Close()
 
-	if ! rows.Next() {
+	if !rows.Next() {
 		log.Printf("not found, params: (api_key: %s)", api_key)
 		return user, errors.New("record not found")
 	}
@@ -62,6 +63,25 @@ func FindUser(api_key string) (user models.User, err error) {
 	}
 
 	return user, nil
+}
+
+func AllUsers() (users models.Users, err error) {
+	rows, err := db.Query(allUsers)
+	if err != nil {
+		log.Printf("%s)", err)
+		return users, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		user, err := scanUserRow(rows)
+		if err != nil {
+			log.Fatal("Failed to scan")
+		}
+		users = append(users, user)
+	}
+
+	return users, err
 }
 
 func ChangedUsers() (users models.Users, err error) {
@@ -107,7 +127,6 @@ func UpdateUserLastChecked(user models.User) {
 	}
 }
 
-
 func Create() {
 	if _, err := db.Exec(createStmt); err != nil {
 		log.Printf("%q: %s\n", err, createStmt)
@@ -144,7 +163,7 @@ func convertSqlString(nullStr sql.NullString) string {
 	return ""
 }
 
-func connectDatabase() (*sql.DB) {
+func connectDatabase() *sql.DB {
 	connectionString := fmt.Sprintf("user=%s password=%s dbname=%s sslmode=disable",
 		os.Getenv("FWDB_USER"),
 		os.Getenv("FWDB_PASSWORD"),

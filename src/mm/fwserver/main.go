@@ -4,7 +4,7 @@ import (
 	"libs/userdb"
 	"log"
 	"net/http"
-  "os"
+	"os"
 )
 
 // check against api keys
@@ -19,7 +19,7 @@ func main() {
 	}
 
 	router := NewRouter()
-  var port = ":"+os.Getenv("FW_PORT")
+	var port = ":" + os.Getenv("FW_PORT")
 	log.Printf("Listening on %s", port)
 	log.Fatal(http.ListenAndServe(port, router))
 }
