@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 	_ "github.com/lib/pq"
-	"libs/models"
+	"github.com/manno/firewall-api/models"
 	"log"
 	"os"
 	"time"

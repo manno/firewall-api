@@ -1,8 +1,8 @@
 package main
 
 import (
-	"libs/models"
-	"libs/userdb"
+	"github.com/manno/firewall-api/models"
+	"github.com/manno/firewall-api/userdb"
 	"log"
 	"os/exec"
 	"strings"

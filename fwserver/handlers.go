@@ -2,10 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"github.com/manno/firewall-api/models"
+	"github.com/manno/firewall-api/userdb"
 	"io"
 	"io/ioutil"
-	"libs/models"
-	"libs/userdb"
 	"net/http"
 	"strings"
 )

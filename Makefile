@@ -1,16 +1,10 @@
-export GOPATH := $(shell pwd )
-export GOBIN := $(shell pwd )/bin
+all: build_fwserver build_fwdaemon
 
-all: fwserver fwdaemon
+build_fwserver:
+	cd ${GOPATH} && go get -v ...fwserver && go build ...fwserver
 
-fwserver:
-	cd src/mm/fwserver/ && go get
-	go build -a mm/fwserver
-
-fwdaemon:
-	cd src/mm/fwdaemon && go get
-	go build -a mm/fwdaemon
-
+build_fwdaemon:
+	cd ${GOPATH} && go get -v ...fwdaemon && go build ...fwdaemon
 
 adduser:
 	psql -U fwdb -W fwdb -h localhost

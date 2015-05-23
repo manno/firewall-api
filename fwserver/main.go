@@ -1,7 +1,7 @@
 package main
 
 import (
-	"libs/userdb"
+	"github.com/manno/firewall-api/userdb"
 	"log"
 	"net/http"
 	"os"
