@@ -1,10 +1,10 @@
-all: build_fwserver build_fwdaemon
+all: build_fwapi-frontend build_fwapi-backend
 
-build_fwserver:
-	cd ${GOPATH} && go get -v ...fwserver && go build ...fwserver
+build_fwapi-frontend:
+	cd ${GOPATH} && go get -v ...fwapi-frontend && go build ...fwapi-frontend
 
-build_fwdaemon:
-	cd ${GOPATH} && go get -v ...fwdaemon && go build ...fwdaemon
+build_fwapi-backend:
+	cd ${GOPATH} && go get -v ...fwapi-backend && go build ...fwapi-backend
 
 adduser:
 	psql -U fwdb -W fwdb -h localhost

@@ -1,2 +1,2 @@
-web: src/mm/fwserver
-daemon: src/mm/fwdaemon
+web: src/mm/fwapi-frontend
+daemon: src/mm/fwapi-backend
